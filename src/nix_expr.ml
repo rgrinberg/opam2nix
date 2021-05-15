@@ -71,6 +71,7 @@ let write dest (t:t) =
 	let open Format in
 	let formatter = formatter_of_out_channel dest in
 	let indent_width = 2 in
+    let printf fmt = Format.fprintf formatter fmt in
 	let put = pp_print_string formatter in
 	let nl = pp_force_newline formatter in
 	let space = pp_print_space formatter in
@@ -98,7 +99,7 @@ let write dest (t:t) =
 				(* XXX what about quoted keys? *)
 				nl ();
 				put (if keysafe key then key else "\"" ^ (escape_string key) ^ "\"");
-				put " = ";
+				printf "@ =@ ";
 				_write v;
 				put ";";
 			);
@@ -133,12 +134,12 @@ let write dest (t:t) =
 			| `Null -> put "null"
 			| `BinaryOp (a, op, b) ->
 					let bracket expr = put "("; _write expr; put ")" in
-					bracket a; put " "; put op; put " "; bracket b
+					bracket a; space (); put op; space (); bracket b
 			| `Property (src, name) -> parens_if_needed src; property name
 			| `PropertyPath (src, path) -> parens_if_needed src; path |> List.iter property
 			| `Property_or (src, name, alt) ->
 					_write (`Property (src, name));
-					put " or ";
+					fprintf "@ or@ ";
 					_write alt
 			| `Function (args, body) ->
 					_write args;
@@ -159,7 +160,7 @@ let write dest (t:t) =
 					(* XXX what about quoted keys? *)
 					nl ();
 					put key;
-					put " = ";
+					printf "@ =@ ";
 					_write v;
 					put ";";
 				);
@@ -169,7 +170,7 @@ let write dest (t:t) =
 				nl ();
 				_write expr
 			| `NamedArguments parts ->
-					put "{ ";
+					printf "{@ ";
 					pp_open_box formatter indent_width;
 					parts |> List.iteri (fun i part ->
 						if i <> 0 then (put ","; space ());
@@ -177,7 +178,7 @@ let write dest (t:t) =
 							| `Id arg -> put arg
 							| `Default (arg, exp) ->
 									put arg;
-									put " ? ";
+									printf "@ ?@ ";
 									_write exp
 					);
 					pp_close_box formatter ();
@@ -191,9 +192,9 @@ let write dest (t:t) =
 			| `Rec_attrs a -> write_attrs ~prefix:"rec " a
 			| `Attrs a -> write_attrs ~prefix:"" a
 			| `With (scope, expr) ->
-					put "with ";
+					printf "with@ ";
 					_write scope;
-					put "; ";
+					printf ";@ ";
 					_write expr;
 	in
 	pp_open_box formatter 0;
